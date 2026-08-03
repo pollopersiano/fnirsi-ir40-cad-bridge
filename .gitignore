@@ -1,0 +1,12 @@
+```text
+# Ignora dati storici e salvataggi locali
+*.csv
+fnirsi_measurements.csv
+
+# Ignora cache di Python
+__pycache__/
+*.pyc
+
+# Ignora cartelle di ambiente virtuale se presenti
+venv/
+.venv/
