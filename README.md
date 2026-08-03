@@ -29,7 +29,7 @@ It automatically captures measurements, converts units on the fly, and copies va
 
 Clone the repository and enter the folder:
 
-git clone https://github.com/YOUR_USERNAME/fnirsi-ir40-cad-bridge.git
+git clone https://github.com/pollopersiano/fnirsi-ir40-cad-bridge.git
 cd fnirsi-ir40-cad-bridge
 
 
@@ -50,6 +50,7 @@ python fnirsi_cad_bridge.py
 ## 📂 Project Structure
 
 📁 fnirsi-ir40-cad-bridge/
+
 ├── 📄 fnirsi_cad_bridge.py     # Main application script
 ├── 📄 translations.json        # External UI translations (EN/IT)
 ├── 📄 README.md                # Project documentation
