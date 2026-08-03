@@ -64,3 +64,15 @@ python fnirsi_cad_bridge.py
 1. **Connect:** Click **Connect Bluetooth**. The app scans for the FNIRSI IR40 device.
 2. **Measure:** Click **Start Measurement** or press the physical button on your laser device.
 3. **Auto-Paste:** The measurement is converted and copied to your clipboard. Switch to CAD and press **CTRL+V**.
+
+---
+
+## 🙏 Credits & Acknowledgements
+
+Special thanks to [MultiMote/fnirsi-ir40-webtool](https://github.com/MultiMote/fnirsi-ir40-webtool) for the initial reverse engineering of the FNIRSI IR40 Bluetooth protocol.
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
