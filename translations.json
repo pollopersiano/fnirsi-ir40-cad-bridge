@@ -1,0 +1,42 @@
+{
+  "en": {
+    "title": "FNIRSI IR40 - CAD Bridge",
+    "status_disconnected": "Status: Disconnected 🔴",
+    "status_searching": "Status: Searching device... 🟡",
+    "status_connected": "Status: Connected ✅",
+    "btn_connect": "Connect Bluetooth",
+    "btn_disconnect": "Disconnect",
+    "btn_start_meas": "Start Measurement",
+    "btn_stop_meas": "Stop Measurement",
+    "lbl_unit": "App/CAD Unit:",
+    "chk_comma": "Use comma (,) instead of dot (.) for European CAD",
+    "chk_autocopy": "Auto-copy to clipboard (ready for CTRL+V)",
+    "lbl_history": "Measurement History (saved to CSV):",
+    "col_time": "Time",
+    "col_value": "Copied Value",
+    "col_raw": "Raw (mm)",
+    "err_not_found_title": "Error",
+    "err_not_found_msg": "FNIRSI IR40 not found!\nMake sure it is powered on.",
+    "err_conn_msg": "Could not connect:\n"
+  },
+  "it": {
+    "title": "FNIRSI IR40 - CAD Bridge",
+    "status_disconnected": "Stato: Disconnesso 🔴",
+    "status_searching": "Stato: Ricerca dispositivo... 🟡",
+    "status_connected": "Stato: Connesso ✅",
+    "btn_connect": "Connetti Bluetooth",
+    "btn_disconnect": "Disconnetti",
+    "btn_start_meas": "Start Misura",
+    "btn_stop_meas": "Stop Misura",
+    "lbl_unit": "Unità App/CAD:",
+    "chk_comma": "Usa virgola (,) al posto del punto (.) per CAD",
+    "chk_autocopy": "Copia automatica negli appunti (pronto per CTRL+V)",
+    "lbl_history": "Storico Misurazioni (salvato in CSV):",
+    "col_time": "Ora",
+    "col_value": "Valore Copiato",
+    "col_raw": "Raw (mm)",
+    "err_not_found_title": "Errore",
+    "err_not_found_msg": "FNIRSI IR40 non trovato!\nVerifica che sia acceso.",
+    "err_conn_msg": "Impossibile connettersi:\n"
+  }
+}
