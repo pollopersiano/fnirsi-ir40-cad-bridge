@@ -71,7 +71,6 @@
   </div>
 
   <script>
-    // Formato corretto per Web Bluetooth API (stringa hex a 16-bit)
     const SERVICE_UUID = '0000ee01-0000-1000-8000-00805f9b34fb';
     const TX_CHARACTERISTIC_UUID = '0000ee03-0000-1000-8000-00805f9b34fb';
 
@@ -82,14 +81,17 @@
 
     connectBtn.addEventListener('click', async () => {
       try {
-        logDiv.innerText = "Ricerca dispositivo...";
+        logDiv.innerText = "Ricerca dispositivi vicini...";
         
-        // Richiesta connessione BLE per il servizio EE01
+        // Modalità permissiva per mostrare tutti i dispositivi BLE
         const device = await navigator.bluetooth.requestDevice({
-          filters: [{ services: [SERVICE_UUID] }]
+          acceptAllDevices: true,
+          optionalServices: [SERVICE_UUID]
         });
 
         statusDiv.innerText = "Connessione in corso...";
+        logDiv.innerText = `Connessione a ${device.name || 'Dispositivo'}...`;
+
         const server = await device.gatt.connect();
         const service = await server.getPrimaryService(SERVICE_UUID);
         const characteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
@@ -117,13 +119,11 @@
 
     function handleData(event) {
       const dataView = event.target.value;
-      // Estrazione corretta dell'array di byte con offset sicuro
       const bytes = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
 
       // Decodifica del pacchetto (modalità passiva)
       if (bytes.length >= 8) {
         let rawVal = (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7];
-        // Conversione in intero non segnato
         rawVal = rawVal >>> 0; 
         
         let distanceMeters = (rawVal / 1000).toFixed(3);
@@ -147,3 +147,4 @@
   </script>
 </body>
 </html>
+
