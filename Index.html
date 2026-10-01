@@ -71,8 +71,9 @@
   </div>
 
   <script>
-    const SERVICE_UUID = 0xEE01;
-    const TX_CHARACTERISTIC_UUID = 0xEE03;
+    // Formato corretto per Web Bluetooth API (stringa hex a 16-bit)
+    const SERVICE_UUID = '0000ee01-0000-1000-8000-00805f9b34fb';
+    const TX_CHARACTERISTIC_UUID = '0000ee03-0000-1000-8000-00805f9b34fb';
 
     const connectBtn = document.getElementById('connectBtn');
     const statusDiv = document.getElementById('status');
@@ -116,13 +117,15 @@
 
     function handleData(event) {
       const dataView = event.target.value;
-      const bytes = new Uint8Array(dataView.buffer);
+      // Estrazione corretta dell'array di byte con offset sicuro
+      const bytes = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
 
       // Decodifica del pacchetto (modalità passiva)
-      // Verifica header tipico del protocollo IR40
       if (bytes.length >= 8) {
-        // Estrazione valore numerico dai byte del pacchetto
         let rawVal = (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7];
+        // Conversione in intero non segnato
+        rawVal = rawVal >>> 0; 
+        
         let distanceMeters = (rawVal / 1000).toFixed(3);
         let formattedValue = `${distanceMeters} m`;
 
@@ -144,4 +147,3 @@
   </script>
 </body>
 </html>
-
