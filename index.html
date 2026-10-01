@@ -71,8 +71,11 @@
   </div>
 
   <script>
-    const SERVICE_UUID = '0000ee01-0000-1000-8000-00805f9b34fb';
-    const TX_CHARACTERISTIC_UUID = '0000ee03-0000-1000-8000-00805f9b34fb';
+    // Formati UUID sia 16-bit che 128-bit
+    const SERVICE_UUID_16 = 0xEE01;
+    const SERVICE_UUID_128 = '0000ee01-0000-1000-8000-00805f9b34fb';
+    const TX_UUID_16 = 0xEE03;
+    const TX_UUID_128 = '0000ee03-0000-1000-8000-00805f9b34fb';
 
     const connectBtn = document.getElementById('connectBtn');
     const statusDiv = document.getElementById('status');
@@ -81,24 +84,40 @@
 
     connectBtn.addEventListener('click', async () => {
       try {
-        logDiv.innerText = "Ricerca dispositivi vicini...";
-        
-        // Modalità permissiva per mostrare tutti i dispositivi BLE
+        logDiv.innerText = "Scansione in corso...";
+
+        // Filtro combinato per catturare il dispositivo con UUID a 16 o 128 bit
         const device = await navigator.bluetooth.requestDevice({
-          acceptAllDevices: true,
-          optionalServices: [SERVICE_UUID]
+          filters: [
+            { services: [SERVICE_UUID_16] },
+            { services: [SERVICE_UUID_128] },
+            { namePrefix: 'IR40' },
+            { namePrefix: 'FNIRSI' }
+          ],
+          optionalServices: [SERVICE_UUID_16, SERVICE_UUID_128, 0xEE02, '0000ee02-0000-1000-8000-00805f9b34fb']
         });
 
         statusDiv.innerText = "Connessione in corso...";
-        logDiv.innerText = `Connessione a ${device.name || 'Dispositivo'}...`;
+        logDiv.innerText = `Connessione a ${device.name || 'IR40'}...`;
 
         const server = await device.gatt.connect();
-        
-        // Pausa di 600ms per stabilizzare il server GATT su Android
-        await new Promise(resolve => setTimeout(resolve, 600));
 
-        const service = await server.getPrimaryService(SERVICE_UUID);
-        const characteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
+        // Pausa di 800ms per stabilizzare lo stack BLE di Android
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        let service;
+        try {
+          service = await server.getPrimaryService(SERVICE_UUID_16);
+        } catch (e) {
+          service = await server.getPrimaryService(SERVICE_UUID_128);
+        }
+
+        let characteristic;
+        try {
+          characteristic = await service.getCharacteristic(TX_UUID_16);
+        } catch (e) {
+          characteristic = await service.getCharacteristic(TX_UUID_128);
+        }
 
         await characteristic.startNotifications();
         characteristic.addEventListener('characteristicvaluechanged', handleData);
@@ -125,7 +144,6 @@
       const dataView = event.target.value;
       const bytes = new Uint8Array(dataView.buffer, dataView.byteOffset, dataView.byteLength);
 
-      // Decodifica del pacchetto (modalità passiva)
       if (bytes.length >= 8) {
         let rawVal = (bytes[4] << 24) | (bytes[5] << 16) | (bytes[6] << 8) | bytes[7];
         rawVal = rawVal >>> 0; 
@@ -133,13 +151,10 @@
         let distanceMeters = (rawVal / 1000).toFixed(3);
         let formattedValue = `${distanceMeters} m`;
 
-        // Aggiorna interfaccia grafica
         distanceDiv.innerText = formattedValue;
         logDiv.innerText = `Ultima lettura: ${new Date().toLocaleTimeString()}`;
 
-        // 1. Copia negli appunti di Android
         navigator.clipboard.writeText(distanceMeters).then(() => {
-          // 2. Feedback tattile (Vibrazione)
           if (navigator.vibrate) {
             navigator.vibrate(120);
           }
