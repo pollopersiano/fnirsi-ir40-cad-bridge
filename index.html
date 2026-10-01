@@ -93,6 +93,10 @@
         logDiv.innerText = `Connessione a ${device.name || 'Dispositivo'}...`;
 
         const server = await device.gatt.connect();
+        
+        // Pausa di 600ms per stabilizzare il server GATT su Android
+        await new Promise(resolve => setTimeout(resolve, 600));
+
         const service = await server.getPrimaryService(SERVICE_UUID);
         const characteristic = await service.getCharacteristic(TX_CHARACTERISTIC_UUID);
 
@@ -147,4 +151,3 @@
   </script>
 </body>
 </html>
-
