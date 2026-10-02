@@ -22,21 +22,66 @@ jobs:
         run: |
           mkdir -p app/src/main/java/com/example/fnirsi
           mkdir -p app/src/main/res/layout
-          
+
+          # Configura settings.gradle
           echo "include ':app'" > settings.gradle
 
-          echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.1.1' } }" > build.gradle
-          echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+          # Configura build.gradle radice
+          cat << 'EOF' > build.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.2'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
 
-          echo "plugins { id 'com.android.application' }" > app/build.gradle
-          echo "android { namespace 'com.example.fnirsi'; compileSdk 34; defaultConfig { applicationId 'com.example.fnirsi'; minSdk 21; targetSdk 34; versionCode 1; versionName '1.0' }; buildTypes { release { minifyEnabled false; signingConfig signingConfigs.debug } } }" >> app/build.gradle
+          # Configura app/build.gradle
+          cat << 'EOF' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+          }
 
+          android {
+              namespace 'com.example.fnirsi'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.example.fnirsi"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          EOF
+
+          # Copia risorse e sorgenti
           cp android/app/src/main/AndroidManifest.xml app/src/main/AndroidManifest.xml
           cp lib/MainActivity.kt app/src/main/java/com/example/fnirsi/MainActivity.kt
           cp lib/activity_main.xml app/src/main/res/layout/activity_main.xml
 
-      - name: Build APK with Gradle
-        run: gradle assembleRelease
+      - name: Setup Gradle Wrapper (v8.5)
+        run: gradle wrapper --gradle-version 8.5
+
+      - name: Build APK with Gradle Wrapper
+        run: ./gradlew assembleRelease
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
