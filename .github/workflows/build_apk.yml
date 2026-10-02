@@ -9,29 +9,34 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x'
+          flutter-version: '3.19.6'
           channel: 'stable'
 
-      - name: Install Dependencies
-        run: flutter pub get
-
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Create Flutter Project Skeleton
+        run: |
+          cd ..
+          flutter create --org com.example fnirsi_cad_bridge_tmp
+          cp -r fnirsi-ir40-cad-bridge/lib fnirsi_cad_bridge_tmp/
+          cp fnirsi-ir40-cad-bridge/pubspec.yaml fnirsi_cad_bridge_tmp/
+          cp fnirsi-ir40-cad-bridge/android/app/src/main/AndroidManifest.xml fnirsi_cad_bridge_tmp/android/app/src/main/
+          cd fnirsi_cad_bridge_tmp
+          flutter pub get
+          flutter build apk --release
+          cp build/app/outputs/flutter-apk/app-release.apk ../fnirsi-ir40-cad-bridge/app-release.apk
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: fnirsi-ir40-bridge-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          
+          path: app-release.apk
