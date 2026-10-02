@@ -1,28 +1,238 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+package com.example.fnirsi
 
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.VIBRATE" />
+import android.Manifest
+import android.bluetooth.*
+import android.bluetooth.le.*
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.*
+import android.util.Log
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import java.util.UUID
 
-    <application
-        android:allowBackup="true"
-        android:icon="@android:drawable/ic_dialog_info"
-        android:label="FNIRSI Bridge"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
-        <activity
-            android:name="com.example.fnirsi.MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
+class MainActivity : AppCompatActivity() {
 
-</manifest>
+    private val PERMISSION_REQUEST_CODE = 101
+
+    private val SERVICE_UUID = UUID.fromString("0000ee01-0000-1000-8000-00805f9b34fb")
+    private val TX_UUID = UUID.fromString("0000ee03-0000-1000-8000-00805f9b34fb")
+    private val CLIENT_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
+    private lateinit var tvStatus: TextView
+    private lateinit var tvDistance: TextView
+    private lateinit var btnConnect: Button
+
+    private var bluetoothGatt: BluetoothGatt? = null
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private var bluetoothScanner: BluetoothLeScanner? = null
+    private var isScanning = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        tvStatus = findViewById(R.id.tvStatus)
+        tvDistance = findViewById(R.id.tvDistance)
+        btnConnect = findViewById(R.id.btnConnect)
+
+        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = btManager.adapter
+
+        btnConnect.setOnClickListener {
+            checkPermissionsAndScan()
+        }
+
+        checkPermissionsAndScan()
+    }
+
+    private fun checkPermissionsAndScan() {
+        val permissionsToRequest = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), PERMISSION_REQUEST_CODE)
+        } else {
+            startBleScan()
+        }
+    }
+
+    private fun startBleScan() {
+        if (bluetoothAdapter == null || !bluetoothAdapter!!.isEnabled) {
+            tvStatus.text = "Attiva il Bluetooth sul telefono!"
+            Toast.makeText(this, "Bluetooth disattivato", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        bluetoothScanner = bluetoothAdapter?.bluetoothLeScanner
+        if (bluetoothScanner == null) {
+            tvStatus.text = "Scanner BLE non disponibile"
+            return
+        }
+
+        if (isScanning) return
+        isScanning = true
+        tvStatus.text = "Ricerca IR40 in corso..."
+
+        val scanSettings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+
+        bluetoothScanner?.startScan(null, scanSettings, scanCallback)
+    }
+
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            val device = result?.device ?: return
+            val name = if (ActivityCompat.checkSelfPermission(
+                    this@MainActivity,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+            ) {
+                device.name ?: ""
+            } else ""
+
+            Log.d("FNIRSI_BLE", "Dispositivo trovato: ${device.address} - $name")
+
+            // Verifica per Nome o per UUID del Servizio EE01
+            val scanRecord = result.scanRecord
+            val serviceUuids = scanRecord?.serviceUuids
+
+            val isFnirsi = name.contains("IR40", ignoreCase = true) ||
+                    name.contains("FNIRSI", ignoreCase = true) ||
+                    (serviceUuids != null && serviceUuids.any { it.uuid == SERVICE_UUID })
+
+            if (isFnirsi) {
+                stopScan()
+                connectToDevice(device)
+            }
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            isScanning = false
+            runOnUiThread {
+                tvStatus.text = "Errore Scansione BLE ($errorCode)"
+            }
+        }
+    }
+
+    private fun stopScan() {
+        if (isScanning) {
+            isScanning = false
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) == PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+            ) {
+                bluetoothScanner?.stopScan(scanCallback)
+            }
+        }
+    }
+
+    private fun connectToDevice(device: BluetoothDevice) {
+        runOnUiThread { tvStatus.text = "Connessione a ${device.address}..." }
+
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        ) {
+            return
+        }
+
+        bluetoothGatt = device.connectGatt(this, false, object : BluetoothGattCallback() {
+            override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    runOnUiThread { tvStatus.text = "🟢 Connesso" }
+                    gatt?.discoverServices()
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    runOnUiThread { tvStatus.text = "🔴 Disconnesso" }
+                }
+            }
+
+            override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                val service = gatt?.getService(SERVICE_UUID)
+                val characteristic = service?.getCharacteristic(TX_UUID)
+                if (characteristic != null) {
+                    gatt.setCharacteristicNotification(characteristic, true)
+                    val descriptor = characteristic.getDescriptor(CLIENT_CONFIG)
+                    descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    gatt.writeDescriptor(descriptor)
+                }
+            }
+
+            override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
+                val bytes = characteristic?.value ?: return
+                if (bytes.size >= 8) {
+                    val rawVal = ((bytes[4].toInt() and 0xFF) shl 24) or
+                            ((bytes[5].toInt() and 0xFF) shl 16) or
+                            ((bytes[6].toInt() and 0xFF) shl 8) or
+                            (bytes[7].toInt() and 0xFF)
+                    val distance = (rawVal and 0xFFFFFFFF.toInt()) / 1000.0
+                    val formatted = String.format("%.3f m", distance)
+
+                    runOnUiThread {
+                        tvDistance.text = formatted
+                        copyToClipboard(String.format("%.3f", distance))
+                        vibrate()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun copyToClipboard(text: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("Distance", text)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(this, "Misura copiata: $text m", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun vibrate() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(120, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(120)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            if (allGranted) {
+                startBleScan()
+            } else {
+                Toast.makeText(this, "Permessi necessari per connettersi al laser", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopScan()
+        bluetoothGatt?.close()
+    }
+}
