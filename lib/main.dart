@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:vibration/vibration.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FNIRSI IR40 Bridge',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color(0xFF121212),
         primaryColor: Colors.blueAccent,
@@ -111,20 +111,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _lastDistance = formatted;
       });
 
-      // Copia negli appunti di sistema
+      // Copia negli appunti
       Clipboard.setData(ClipboardData(text: distance.toStringAsFixed(3)));
 
-      // Feedback vibrazione
-      Vibration.hasVibrator().then((hasVibrator) {
-        if (hasVibrator ?? false) {
-          Vibration.vibrate(duration: 120);
-        }
-      });
+      // Vibrazione nativa
+      HapticFeedback.vibrate();
     }
   }
 
   @override
-
   void dispose() {
     _notifySubscription?.cancel();
     _connectedDevice?.disconnect();
@@ -132,7 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
@@ -162,4 +156,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
