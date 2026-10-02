@@ -49,6 +49,7 @@ jobs:
           cat << 'EOF' > app/build.gradle
           plugins {
               id 'com.android.application'
+              id 'org.jetbrains.kotlin.android' version '1.9.22'
           }
 
           android {
