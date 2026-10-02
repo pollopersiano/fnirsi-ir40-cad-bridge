@@ -23,6 +23,10 @@ jobs:
           mkdir -p app/src/main/java/com/example/fnirsi
           mkdir -p app/src/main/res/layout
 
+          # Configura gradle.properties per abilitare AndroidX
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
           # Configura settings.gradle
           echo "include ':app'" > settings.gradle
 
