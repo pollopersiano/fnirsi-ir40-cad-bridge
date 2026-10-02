@@ -23,13 +23,13 @@ jobs:
           flutter-version: '3.19.6'
           channel: 'stable'
 
-      - name: Create Flutter Project Skeleton
+      - name: Build Project
         run: |
           cd ..
           flutter create --org com.example fnirsi_cad_bridge_tmp
-          cp -r fnirsi-ir40-cad-bridge/lib fnirsi_cad_bridge_tmp/
           cp fnirsi-ir40-cad-bridge/pubspec.yaml fnirsi_cad_bridge_tmp/
-          cp fnirsi-ir40-cad-bridge/android/app/src/main/AndroidManifest.xml fnirsi_cad_bridge_tmp/android/app/src/main/
+          cp fnirsi-ir40-cad-bridge/lib/main.dart fnirsi_cad_bridge_tmp/lib/main.dart
+          cp fnirsi-ir40-cad-bridge/android/app/src/main/AndroidManifest.xml fnirsi_cad_bridge_tmp/android/app/src/main/AndroidManifest.xml
           cd fnirsi_cad_bridge_tmp
           flutter pub get
           flutter build apk --release
