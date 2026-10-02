@@ -11,32 +11,60 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.19.6'
-          channel: 'stable'
-
-      - name: Build Project
+      - name: Build with Gradle
         run: |
-          cd ..
-          flutter create --org com.example fnirsi_cad_bridge_tmp
-          cp fnirsi-ir40-cad-bridge/pubspec.yaml fnirsi_cad_bridge_tmp/
-          cp fnirsi-ir40-cad-bridge/lib/main.dart fnirsi_cad_bridge_tmp/lib/main.dart
-          cp fnirsi-ir40-cad-bridge/android/app/src/main/AndroidManifest.xml fnirsi_cad_bridge_tmp/android/app/src/main/AndroidManifest.xml
-          cd fnirsi_cad_bridge_tmp
-          flutter pub get
-          flutter build apk --release
-          cp build/app/outputs/flutter-apk/app-release.apk ../fnirsi-ir40-cad-bridge/app-release.apk
+          mkdir -p app/src/main/java/com/example/fnirsi
+          mkdir -p app/src/main/res/layout
+          
+          cat << 'EOF' > settings.gradle
+          include ':app'
+          EOF
 
-      - name: Upload APK Artifact
+          cat << 'EOF' > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.1.1' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
+
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.example.fnirsi'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.example.fnirsi"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          EOF
+
+          cp android/app/src/main/AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cp lib/MainActivity.kt app/src/main/java/com/example/fnirsi/MainActivity.kt
+          cp lib/activity_main.xml app/src/main/res/layout/activity_main.xml
+
+          gradle assembleRelease
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: fnirsi-ir40-bridge-apk
-          path: app-release.apk
+          path: app/build/outputs/apk/release/app-release.apk
