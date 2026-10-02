@@ -7,16 +7,16 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="FNIRSI IR40 Bridge"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@android:drawable/ic_dialog_info"
+        android:label="FNIRSI Bridge"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.NoActionBar">
+        android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.fnirsi.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
